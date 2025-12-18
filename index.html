@@ -1,0 +1,1431 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eco Hero - Water Saver Defender</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Comic Sans MS', 'Arial', sans-serif;
+      overflow: hidden;
+      background: linear-gradient(to bottom, #87CEEB 0%, #98D8C8 100%);
+    }
+
+    html, body, #game-container {
+      height: 100%;
+      width: 100%;
+    }
+
+    #game-container {
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Title Screen */
+    #title-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: linear-gradient(to bottom, #87CEEB 0%, #98D8C8 50%, #90EE90 100%);
+      z-index: 100;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    #title-screen h1 {
+      font-size: 2.5em;
+      color: #2E8B57;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .player-info {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 15px 30px;
+      border-radius: 20px;
+      margin: 10px 0;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .player-info h2 {
+      margin: 0 0 10px 0;
+      color: #2E8B57;
+      font-size: 1.5em;
+    }
+
+    .total-points {
+      font-size: 1.8em;
+      color: #4CAF50;
+      font-weight: bold;
+    }
+
+    .place-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      max-width: 900px;
+      padding: 20px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .place-card {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      border: 3px solid transparent;
+      position: relative;
+    }
+
+    .place-card.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #e0e0e0;
+    }
+
+    .place-card.locked::after {
+      content: '🔒';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 2em;
+    }
+
+    .place-card:not(.locked):hover {
+      transform: translateY(-10px) scale(1.05);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      border-color: #4CAF50;
+    }
+
+    .place-card.selected {
+      border-color: #2E8B57;
+      background: linear-gradient(to bottom, #f0fff0, #ffffff);
+    }
+
+    .place-icon {
+      font-size: 4em;
+      margin-bottom: 10px;
+    }
+
+    .place-card h3 {
+      font-size: 1.5em;
+      color: #2E8B57;
+      margin: 10px 0;
+    }
+
+    .difficulty {
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-weight: bold;
+      display: inline-block;
+      margin: 10px 0;
+    }
+
+    .difficulty.easy {
+      background: #90EE90;
+      color: #006400;
+    }
+
+    .difficulty.medium {
+      background: #FFD700;
+      color: #8B4513;
+    }
+
+    .difficulty.hard {
+      background: #FFA500;
+      color: #8B0000;
+    }
+
+    .difficulty.expert {
+      background: #FF6B6B;
+      color: #FFFFFF;
+    }
+
+    .unlock-requirement {
+      color: #666;
+      font-size: 0.85em;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .best-score {
+      color: #4CAF50;
+      font-size: 0.9em;
+      margin-top: 5px;
+    }
+
+    .leaderboard-btn {
+      padding: 15px 40px;
+      font-size: 1.3em;
+      background: linear-gradient(to bottom, #FFD700, #FFA500);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      transition: all 0.3s;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    .leaderboard-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    }
+
+    /* Leaderboard Screen */
+    #leaderboard-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: linear-gradient(to bottom, #87CEEB 0%, #98D8C8 50%, #90EE90 100%);
+      z-index: 100;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    #leaderboard-screen h1 {
+      font-size: 2.5em;
+      color: #2E8B57;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+    }
+
+    .leaderboard-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 800px;
+      width: 100%;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    }
+
+    .rank-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      margin: 10px 0;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-left: 5px solid #4CAF50;
+    }
+
+    .rank-item.rank-1 {
+      border-left-color: #FFD700;
+      background: linear-gradient(to right, #FFF8DC, white);
+    }
+
+    .rank-item.rank-2 {
+      border-left-color: #C0C0C0;
+      background: linear-gradient(to right, #F5F5F5, white);
+    }
+
+    .rank-item.rank-3 {
+      border-left-color: #CD7F32;
+      background: linear-gradient(to right, #FFF0E6, white);
+    }
+
+    .rank-number {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #2E8B57;
+      min-width: 50px;
+    }
+
+    .rank-name {
+      flex: 1;
+      font-size: 1.2em;
+      color: #333;
+      margin: 0 20px;
+    }
+
+    .rank-score {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+
+    .back-btn {
+      padding: 15px 40px;
+      font-size: 1.3em;
+      background: linear-gradient(to bottom, #4CAF50, #2E8B57);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      transition: all 0.3s;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+
+    .back-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    }
+
+    /* Game Canvas */
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+
+    /* HUD */
+    #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      display: none;
+      justify-content: space-between;
+      z-index: 10;
+      color: white;
+      font-size: 1.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .hud-item {
+      background: rgba(46, 139, 87, 0.8);
+      padding: 10px 20px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Game Over Screen */
+    #game-over-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 100;
+      color: white;
+    }
+
+    #game-over-screen h2 {
+      font-size: 3.5em;
+      color: #FF6B6B;
+      margin-bottom: 20px;
+    }
+
+    #final-score {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    .level-complete {
+      font-size: 1.5em;
+      color: #FFD700;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    #final-message {
+      font-size: 1.8em;
+      color: #4CAF50;
+      margin-bottom: 30px;
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    .game-over-btn {
+      padding: 15px 40px;
+      font-size: 1.5em;
+      margin: 10px;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+    }
+
+    #restart-btn {
+      background: linear-gradient(to bottom, #4CAF50, #2E8B57);
+      color: white;
+    }
+
+    #quit-btn {
+      background: linear-gradient(to bottom, #FF6B6B, #CC5555);
+      color: white;
+    }
+
+    .game-over-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+    }
+
+    .name-input-container {
+      margin: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .name-input-container input {
+      padding: 15px 25px;
+      font-size: 1.2em;
+      border: 3px solid #4CAF50;
+      border-radius: 15px;
+      text-align: center;
+      width: 300px;
+      font-family: 'Comic Sans MS', 'Arial', sans-serif;
+    }
+
+    .save-score-btn {
+      padding: 15px 40px;
+      font-size: 1.3em;
+      background: linear-gradient(to bottom, #FFD700, #FFA500);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+
+    .save-score-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    }
+
+    .save-score-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .loading {
+      font-size: 1.2em;
+      color: #4CAF50;
+      margin: 10px 0;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <div id="game-container"><!-- Title Screen -->
+   <div id="title-screen">
+    <h1 id="game-title-text">Eco Hero - Water Saver Defender</h1>
+    <div class="player-info">
+     <h2>🏆 Total Points</h2>
+     <div class="total-points" id="total-points-display">
+      0
+     </div>
+    </div>
+    <p style="font-size: 1.3em; color: #2E8B57; margin: 15px 0;">Choose Your Level!</p>
+    <div class="place-selector">
+     <div class="place-card" data-place="village" data-unlocked="true">
+      <div class="place-icon">
+       🏘️
+      </div>
+      <h3>Village</h3>
+      <p class="difficulty easy">Easy</p>
+      <p class="best-score" data-level="village">Best: 0</p>
+     </div>
+     <div class="place-card locked" data-place="city" data-unlocked="false">
+      <div class="place-icon">
+       🏙️
+      </div>
+      <h3>City</h3>
+      <p class="difficulty medium">Medium</p>
+      <p class="unlock-requirement">Unlock at 500 points</p>
+      <p class="best-score" data-level="city">Best: 0</p>
+     </div>
+     <div class="place-card locked" data-place="forest" data-unlocked="false">
+      <div class="place-icon">
+       🌳
+      </div>
+      <h3>Forest</h3>
+      <p class="difficulty hard">Hard</p>
+      <p class="unlock-requirement">Unlock at 1000 points</p>
+      <p class="best-score" data-level="forest">Best: 0</p>
+     </div>
+     <div class="place-card locked" data-place="riverbed" data-unlocked="false">
+      <div class="place-icon">
+       🏞️
+      </div>
+      <h3>Riverbed</h3>
+      <p class="difficulty expert">Expert</p>
+      <p class="unlock-requirement">Unlock at 2500 points</p>
+      <p class="best-score" data-level="riverbed">Best: 0</p>
+     </div>
+    </div><button class="leaderboard-btn" id="view-leaderboard-btn">🏆 View Rankings</button>
+   </div><!-- Leaderboard Screen -->
+   <div id="leaderboard-screen">
+    <h1>🏆 Top Players Rankings</h1>
+    <div class="leaderboard-container">
+     <div id="leaderboard-list">
+      <p style="text-align: center; color: #666;">No rankings yet. Be the first!</p>
+     </div>
+    </div><button class="back-btn" id="back-to-menu-btn">Back to Menu</button>
+   </div><!-- Game Canvas -->
+   <canvas id="game-canvas"></canvas><!-- HUD -->
+   <div id="hud">
+    <div class="hud-item"><span>💧 Score: <span id="score">0</span></span>
+    </div>
+    <div class="hud-item"><span id="environment-indicator">🏘️ Village</span>
+    </div>
+    <div class="hud-item"><span id="lives">❤️❤️❤️</span>
+    </div>
+   </div><!-- Game Over Screen -->
+   <div id="game-over-screen">
+    <h2 id="game-over-title">Game Over</h2>
+    <div id="final-score">
+     Final Score: 0
+    </div>
+    <div id="level-unlock-message" class="level-complete"></div>
+    <div class="name-input-container" id="name-input-section"><label for="player-name-input" style="font-size: 1.3em;">Enter Your Name:</label> <input type="text" id="player-name-input" placeholder="Your Name" maxlength="20"> <button class="save-score-btn" id="save-score-btn">💾 Save Score</button>
+     <div class="loading hidden" id="save-loading">
+      Saving...
+     </div>
+    </div>
+    <div id="final-message">
+     Save Water - Every Drop Counts
+    </div>
+    <div><button class="game-over-btn" id="restart-btn">Play Again</button> <button class="game-over-btn" id="quit-btn">Back to Menu</button>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      game_title: "Eco Hero - Water Saver Defender",
+      start_button_text: "Start Game",
+      game_over_text: "Game Over",
+      final_message: "Save Water - Every Drop Counts",
+      primary_color: "#2E8B57",
+      secondary_color: "#4CAF50",
+      accent_color: "#87CEEB",
+      text_color: "#FFFFFF",
+      danger_color: "#FF6B6B",
+      font_family: "Comic Sans MS",
+      font_size: 16
+    };
+
+    async function onConfigChange(config) {
+      const titleElement = document.getElementById('game-title-text');
+      const gameOverTitleElement = document.getElementById('game-over-title');
+      const finalMessageElement = document.getElementById('final-message');
+
+      if (titleElement) {
+        titleElement.textContent = config.game_title || defaultConfig.game_title;
+      }
+      if (gameOverTitleElement) {
+        gameOverTitleElement.textContent = config.game_over_text || defaultConfig.game_over_text;
+      }
+      if (finalMessageElement) {
+        finalMessageElement.textContent = config.final_message || defaultConfig.final_message;
+      }
+
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseSize = config.font_size || defaultConfig.font_size;
+      const baseFontStack = 'Arial, sans-serif';
+
+      if (titleElement) {
+        titleElement.style.fontFamily = `${customFont}, ${baseFontStack}`;
+        titleElement.style.fontSize = `${baseSize * 2.5}px`;
+        titleElement.style.color = config.primary_color || defaultConfig.primary_color;
+      }
+      if (gameOverTitleElement) {
+        gameOverTitleElement.style.fontFamily = `${customFont}, ${baseFontStack}`;
+        gameOverTitleElement.style.fontSize = `${baseSize * 3.5}px`;
+        gameOverTitleElement.style.color = config.danger_color || defaultConfig.danger_color;
+      }
+      if (finalMessageElement) {
+        finalMessageElement.style.fontFamily = `${customFont}, ${baseFontStack}`;
+        finalMessageElement.style.fontSize = `${baseSize * 1.8}px`;
+        finalMessageElement.style.color = config.secondary_color || defaultConfig.secondary_color;
+      }
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.primary_color || defaultConfig.primary_color,
+              set: (value) => {
+                window.elementSdk.config.primary_color = value;
+                window.elementSdk.setConfig({ primary_color: value });
+              }
+            },
+            {
+              get: () => config.secondary_color || defaultConfig.secondary_color,
+              set: (value) => {
+                window.elementSdk.config.secondary_color = value;
+                window.elementSdk.setConfig({ secondary_color: value });
+              }
+            },
+            {
+              get: () => config.accent_color || defaultConfig.accent_color,
+              set: (value) => {
+                window.elementSdk.config.accent_color = value;
+                window.elementSdk.setConfig({ accent_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                window.elementSdk.config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            },
+            {
+              get: () => config.danger_color || defaultConfig.danger_color,
+              set: (value) => {
+                window.elementSdk.config.danger_color = value;
+                window.elementSdk.setConfig({ danger_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => window.elementSdk.config.font_family || defaultConfig.font_family,
+            set: (value) => {
+              window.elementSdk.config.font_family = value;
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          },
+          fontSizeable: {
+            get: () => window.elementSdk.config.font_size || defaultConfig.font_size,
+            set: (value) => {
+              window.elementSdk.config.font_size = value;
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["game_title", config.game_title || defaultConfig.game_title],
+          ["start_button_text", config.start_button_text || defaultConfig.start_button_text],
+          ["game_over_text", config.game_over_text || defaultConfig.game_over_text],
+          ["final_message", config.final_message || defaultConfig.final_message]
+        ])
+      });
+    }
+
+    // Game Variables
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const titleScreen = document.getElementById('title-screen');
+    const leaderboardScreen = document.getElementById('leaderboard-screen');
+    const hud = document.getElementById('hud');
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const environmentIndicator = document.getElementById('environment-indicator');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const finalScoreEl = document.getElementById('final-score');
+    const levelUnlockMessage = document.getElementById('level-unlock-message');
+    const restartBtn = document.getElementById('restart-btn');
+    const quitBtn = document.getElementById('quit-btn');
+    const viewLeaderboardBtn = document.getElementById('view-leaderboard-btn');
+    const backToMenuBtn = document.getElementById('back-to-menu-btn');
+    const playerNameInput = document.getElementById('player-name-input');
+    const saveScoreBtn = document.getElementById('save-score-btn');
+    const saveLoading = document.getElementById('save-loading');
+    const nameInputSection = document.getElementById('name-input-section');
+
+    let gameRunning = false;
+    let score = 0;
+    let lives = 3;
+    let hitCounter = 0;
+    let animationId;
+    let selectedPlace = null;
+    let playerData = null;
+    let allPlayerRecords = [];
+    let currentRecordCount = 0;
+
+    // Player
+    const player = {
+      x: 100,
+      y: 0,
+      width: 40,
+      height: 50,
+      velocityY: 0,
+      jumping: false,
+      grounded: false
+    };
+
+    // Difficulty settings for each place
+    const difficultySettings = {
+      village: {
+        name: 'Village',
+        icon: '🏘️',
+        gameSpeed: 3,
+        obstacleSpawnRate: 0.015,
+        collectibleSpawnRate: 0.02,
+        obstacleSpeed: 5,
+        unlockPoints: 0
+      },
+      city: {
+        name: 'City',
+        icon: '🏙️',
+        gameSpeed: 4,
+        obstacleSpawnRate: 0.022,
+        collectibleSpawnRate: 0.015,
+        obstacleSpeed: 6,
+        unlockPoints: 500
+      },
+      forest: {
+        name: 'Forest',
+        icon: '🌳',
+        gameSpeed: 5,
+        obstacleSpawnRate: 0.028,
+        collectibleSpawnRate: 0.012,
+        obstacleSpeed: 7,
+        unlockPoints: 1000
+      },
+      riverbed: {
+        name: 'Riverbed',
+        icon: '🏞️',
+        gameSpeed: 6,
+        obstacleSpawnRate: 0.035,
+        collectibleSpawnRate: 0.01,
+        obstacleSpeed: 8,
+        unlockPoints: 2500
+      }
+    };
+
+    // Game objects
+    let obstacles = [];
+    let collectibles = [];
+    let backgroundX = 0;
+
+    // Data SDK Handler
+    const dataHandler = {
+      onDataChanged(data) {
+        allPlayerRecords = data;
+        currentRecordCount = data.length;
+        updatePlayerProgress();
+        renderLeaderboard();
+      }
+    };
+
+    // Initialize Data SDK
+    async function initDataSDK() {
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          console.error("Failed to initialize data SDK");
+        }
+      }
+    }
+
+    // Update player progress from records
+    function updatePlayerProgress() {
+      // Find the current player's record (we'll use the most recent or create new)
+      if (allPlayerRecords.length > 0) {
+        // For simplicity, we track all players but show aggregated data
+        let totalPoints = 0;
+        let villageBest = 0;
+        let cityBest = 0;
+        let forestBest = 0;
+        let riverbedBest = 0;
+
+        // Calculate best scores from all records
+        allPlayerRecords.forEach(record => {
+          if (record.village_score > villageBest) villageBest = record.village_score;
+          if (record.city_score > cityBest) cityBest = record.city_score;
+          if (record.forest_score > forestBest) forestBest = record.forest_score;
+          if (record.riverbed_score > riverbedBest) riverbedBest = record.riverbed_score;
+          if (record.total_points > totalPoints) totalPoints = record.total_points;
+        });
+
+        // Update displays
+        document.getElementById('total-points-display').textContent = totalPoints;
+        document.querySelector('[data-level="village"]').textContent = `Best: ${villageBest}`;
+        document.querySelector('[data-level="city"]').textContent = `Best: ${cityBest}`;
+        document.querySelector('[data-level="forest"]').textContent = `Best: ${forestBest}`;
+        document.querySelector('[data-level="riverbed"]').textContent = `Best: ${riverbedBest}`;
+
+        // Update level locks based on total points
+        updateLevelLocks(totalPoints);
+      }
+    }
+
+    // Update level locks
+    function updateLevelLocks(totalPoints) {
+      const placeCards = document.querySelectorAll('.place-card');
+      
+      placeCards.forEach(card => {
+        const place = card.dataset.place;
+        const unlockPoints = difficultySettings[place].unlockPoints;
+        
+        if (totalPoints >= unlockPoints) {
+          card.classList.remove('locked');
+          card.dataset.unlocked = 'true';
+        }
+      });
+    }
+
+    // Render leaderboard
+    function renderLeaderboard() {
+      const leaderboardList = document.getElementById('leaderboard-list');
+      
+      if (allPlayerRecords.length === 0) {
+        leaderboardList.innerHTML = '<p style="text-align: center; color: #666;">No rankings yet. Be the first!</p>';
+        return;
+      }
+
+      // Sort by total points
+      const sortedRecords = [...allPlayerRecords].sort((a, b) => b.total_points - a.total_points);
+      
+      leaderboardList.innerHTML = sortedRecords.map((record, index) => {
+        const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+        return `
+          <div class="rank-item ${rankClass}">
+            <div class="rank-number">#${index + 1}</div>
+            <div class="rank-name">${record.player_name || 'Anonymous'}</div>
+            <div class="rank-score">${record.total_points} pts</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Save score to Data SDK
+    async function saveScore() {
+      const playerName = playerNameInput.value.trim() || 'Anonymous';
+      
+      if (currentRecordCount >= 999) {
+        alert("Maximum limit of 999 records reached. Cannot save more scores.");
+        return;
+      }
+
+      saveScoreBtn.disabled = true;
+      saveLoading.classList.remove('hidden');
+
+      // Calculate new total points (for simplicity, we'll add to existing or create new)
+      const newRecord = {
+        player_name: playerName,
+        total_points: score,
+        village_score: selectedPlace === 'village' ? score : 0,
+        city_score: selectedPlace === 'city' ? score : 0,
+        forest_score: selectedPlace === 'forest' ? score : 0,
+        riverbed_score: selectedPlace === 'riverbed' ? score : 0,
+        unlocked_levels: getUnlockedLevels(score),
+        timestamp: new Date().toISOString()
+      };
+
+      const result = await window.dataSdk.create(newRecord);
+      
+      saveLoading.classList.add('hidden');
+      saveScoreBtn.disabled = false;
+
+      if (result.isOk) {
+        nameInputSection.classList.add('hidden');
+      } else {
+        alert("Failed to save score. Please try again.");
+      }
+    }
+
+    // Get unlocked levels string
+    function getUnlockedLevels(totalPoints) {
+      const unlocked = ['village'];
+      if (totalPoints >= 500) unlocked.push('city');
+      if (totalPoints >= 1000) unlocked.push('forest');
+      if (totalPoints >= 2500) unlocked.push('riverbed');
+      return unlocked.join(',');
+    }
+
+    // Resize canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      player.y = canvas.height - 150;
+    }
+
+    // Draw background based on selected place
+    function drawBackground() {
+      if (!selectedPlace) return;
+      
+      if (selectedPlace === 'village') {
+        drawVillageBackground();
+      } else if (selectedPlace === 'city') {
+        drawCityBackground();
+      } else if (selectedPlace === 'forest') {
+        drawForestBackground();
+      } else if (selectedPlace === 'riverbed') {
+        drawRiverbedBackground();
+      }
+    }
+
+    function drawVillageBackground() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#87CEEB');
+      gradient.addColorStop(0.5, '#98D8C8');
+      gradient.addColorStop(1, '#90EE90');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      for (let i = 0; i < 3; i++) {
+        const x = (backgroundX * 0.3 + i * 400) % (canvas.width + 200) - 100;
+        drawCloud(x, 50 + i * 40);
+      }
+
+      ctx.fillStyle = '#8B7355';
+      ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+      ctx.fillStyle = '#228B22';
+      ctx.fillRect(0, canvas.height - 110, canvas.width, 10);
+
+      for (let i = 0; i < 4; i++) {
+        const x = (backgroundX * 0.5 + i * 350) % (canvas.width + 150) - 75;
+        drawHouse(x, canvas.height - 180);
+      }
+
+      for (let i = 0; i < 5; i++) {
+        const x = (backgroundX * 0.5 + i * 300) % (canvas.width + 100) - 50;
+        drawTree(x, canvas.height - 150);
+      }
+    }
+
+    function drawCityBackground() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#87CEEB');
+      gradient.addColorStop(1, '#B0C4DE');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#404040';
+      ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+
+      ctx.fillStyle = '#FFFF00';
+      for (let i = 0; i < canvas.width / 60; i++) {
+        const x = (backgroundX * 2 + i * 60) % (canvas.width + 60);
+        ctx.fillRect(x, canvas.height - 55, 40, 5);
+      }
+
+      for (let i = 0; i < 6; i++) {
+        const x = (backgroundX * 0.4 + i * 250) % (canvas.width + 120) - 60;
+        drawBuilding(x, canvas.height - 200 - Math.random() * 100);
+      }
+    }
+
+    function drawForestBackground() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#87CEEB');
+      gradient.addColorStop(1, '#228B22');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#654321';
+      ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+      ctx.fillStyle = '#2F4F2F';
+      ctx.fillRect(0, canvas.height - 110, canvas.width, 10);
+
+      for (let i = 0; i < 8; i++) {
+        const x = (backgroundX * 0.6 + i * 180) % (canvas.width + 100) - 50;
+        drawTree(x, canvas.height - 150);
+      }
+
+      for (let i = 0; i < 10; i++) {
+        const x = (backgroundX * 0.7 + i * 150) % (canvas.width + 80) - 40;
+        drawBush(x, canvas.height - 120);
+      }
+    }
+
+    function drawRiverbedBackground() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#87CEEB');
+      gradient.addColorStop(1, '#4682B4');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const riverGradient = ctx.createLinearGradient(0, canvas.height - 120, 0, canvas.height);
+      riverGradient.addColorStop(0, '#1E90FF');
+      riverGradient.addColorStop(1, '#4169E1');
+      ctx.fillStyle = riverGradient;
+      ctx.fillRect(0, canvas.height - 120, canvas.width, 120);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        const y = canvas.height - 100 + i * 15;
+        for (let x = 0; x < canvas.width + 40; x += 40) {
+          const waveX = (backgroundX * 1.5 + x) % (canvas.width + 40);
+          ctx.lineTo(waveX, y + Math.sin((x + backgroundX) * 0.1) * 5);
+        }
+        ctx.stroke();
+      }
+
+      for (let i = 0; i < 6; i++) {
+        const x = (backgroundX * 0.5 + i * 280) % (canvas.width + 100) - 50;
+        drawRock(x, canvas.height - 140);
+      }
+
+      for (let i = 0; i < 7; i++) {
+        const x = (backgroundX * 0.6 + i * 200) % (canvas.width + 80) - 40;
+        drawPlant(x, canvas.height - 130);
+      }
+    }
+
+    function drawCloud(x, y) {
+      ctx.beginPath();
+      ctx.arc(x, y, 20, 0, Math.PI * 2);
+      ctx.arc(x + 25, y, 30, 0, Math.PI * 2);
+      ctx.arc(x + 50, y, 20, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawTree(x, y) {
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(x + 15, y, 20, 60);
+      ctx.fillStyle = '#228B22';
+      ctx.beginPath();
+      ctx.arc(x + 25, y - 10, 30, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawHouse(x, y) {
+      ctx.fillStyle = '#D2691E';
+      ctx.fillRect(x, y + 30, 60, 40);
+      ctx.fillStyle = '#8B4513';
+      ctx.beginPath();
+      ctx.moveTo(x - 5, y + 30);
+      ctx.lineTo(x + 30, y);
+      ctx.lineTo(x + 65, y + 30);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#654321';
+      ctx.fillRect(x + 20, y + 45, 20, 25);
+      ctx.fillStyle = '#87CEEB';
+      ctx.fillRect(x + 10, y + 40, 12, 12);
+    }
+
+    function drawBuilding(x, y) {
+      const height = 150 + Math.floor(Math.random() * 100);
+      ctx.fillStyle = '#696969';
+      ctx.fillRect(x, y, 50, height);
+      ctx.fillStyle = '#FFFF99';
+      for (let i = 0; i < height / 25; i++) {
+        for (let j = 0; j < 2; j++) {
+          ctx.fillRect(x + 10 + j * 25, y + 10 + i * 25, 10, 15);
+        }
+      }
+    }
+
+    function drawBush(x, y) {
+      ctx.fillStyle = '#2F4F2F';
+      ctx.beginPath();
+      ctx.arc(x + 15, y, 15, 0, Math.PI * 2);
+      ctx.arc(x + 30, y, 12, 0, Math.PI * 2);
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawRock(x, y) {
+      ctx.fillStyle = '#808080';
+      ctx.beginPath();
+      ctx.ellipse(x + 20, y + 15, 25, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#A9A9A9';
+      ctx.beginPath();
+      ctx.ellipse(x + 20, y + 10, 20, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawPlant(x, y) {
+      ctx.fillStyle = '#32CD32';
+      ctx.strokeStyle = '#228B22';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(x + i * 10, y + 20);
+        ctx.lineTo(x + i * 10, y);
+        ctx.stroke();
+        ctx.fillStyle = '#32CD32';
+        ctx.beginPath();
+        ctx.ellipse(x + i * 10 - 5, y + 5, 5, 8, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(x + i * 10 + 5, y + 5, 5, 8, -Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawPlayer() {
+      ctx.fillStyle = '#F5F5DC';
+      ctx.beginPath();
+      ctx.ellipse(player.x + 20, player.y + 30, 18, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#F5F5DC';
+      ctx.beginPath();
+      ctx.arc(player.x + 20, player.y + 15, 14, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#F5F5DC';
+      ctx.beginPath();
+      ctx.ellipse(player.x + 12, player.y + 3, 4, 10, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#FFB6C1';
+      ctx.beginPath();
+      ctx.ellipse(player.x + 12, player.y + 3, 2, 6, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#F5F5DC';
+      ctx.beginPath();
+      ctx.ellipse(player.x + 28, player.y + 3, 4, 10, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#FFB6C1';
+      ctx.beginPath();
+      ctx.ellipse(player.x + 28, player.y + 3, 2, 6, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(player.x + 16, player.y + 13, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(player.x + 24, player.y + 13, 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#FFB6C1';
+      ctx.beginPath();
+      ctx.arc(player.x + 20, player.y + 17, 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#F5F5DC';
+      ctx.beginPath();
+      ctx.ellipse(player.x + 12, player.y + 48, 6, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(player.x + 28, player.y + 48, 6, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(player.x + 35, player.y + 35, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawObstacle(obs) {
+      if (obs.type === 'tap') {
+        ctx.fillStyle = '#C0C0C0';
+        ctx.fillRect(obs.x, obs.y, 30, 20);
+        ctx.fillRect(obs.x + 10, obs.y + 20, 10, 10);
+        ctx.fillStyle = '#1E90FF';
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.arc(obs.x + 15, obs.y + 35 + i * 10, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        ctx.fillStyle = '#696969';
+        ctx.fillRect(obs.x, obs.y + 10, 40, 15);
+        ctx.fillRect(obs.x + 5, obs.y, 10, 35);
+        ctx.fillRect(obs.x + 25, obs.y, 10, 35);
+      }
+    }
+
+    function drawCollectible(col) {
+      const gradient = ctx.createRadialGradient(col.x + 15, col.y + 15, 5, col.x + 15, col.y + 15, 15);
+      gradient.addColorStop(0, '#00FFFF');
+      gradient.addColorStop(1, '#1E90FF');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(col.x + 15, col.y + 15, 15, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.beginPath();
+      ctx.arc(col.x + 10, col.y + 10, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function checkCollision(obj1, obj2) {
+      return obj1.x < obj2.x + obj2.width &&
+             obj1.x + obj1.width > obj2.x &&
+             obj1.y < obj2.y + obj2.height &&
+             obj1.y + obj1.height > obj2.y;
+    }
+
+    function update() {
+      if (!gameRunning || !selectedPlace) return;
+
+      const difficulty = difficultySettings[selectedPlace];
+
+      backgroundX -= difficulty.gameSpeed;
+
+      player.velocityY += 0.8;
+      player.y += player.velocityY;
+
+      if (player.y >= canvas.height - 150) {
+        player.y = canvas.height - 150;
+        player.velocityY = 0;
+        player.jumping = false;
+        player.grounded = true;
+      }
+
+      obstacles.forEach((obs, index) => {
+        obs.x -= difficulty.obstacleSpeed;
+        
+        if (checkCollision(player, obs)) {
+          hitCounter++;
+          score -= 2;
+          if (score < 0) score = 0;
+          
+          if (hitCounter >= 5) {
+            lives--;
+            hitCounter = 0;
+            updateLives();
+            
+            if (lives <= 0) {
+              endGame();
+            }
+          }
+          
+          obstacles.splice(index, 1);
+          updateScore();
+        }
+        
+        if (obs.x + obs.width < 0) {
+          obstacles.splice(index, 1);
+        }
+      });
+
+      collectibles.forEach((col, index) => {
+        col.x -= difficulty.obstacleSpeed;
+        
+        if (checkCollision(player, col)) {
+          score += 5;
+          collectibles.splice(index, 1);
+          updateScore();
+        }
+        
+        if (col.x + col.width < 0) {
+          collectibles.splice(index, 1);
+        }
+      });
+
+      if (Math.random() < difficulty.obstacleSpawnRate) {
+        const type = Math.random() < 0.5 ? 'tap' : 'pipe';
+        obstacles.push({
+          x: canvas.width,
+          y: canvas.height - 150 - (type === 'tap' ? 60 : 50),
+          width: type === 'tap' ? 30 : 40,
+          height: type === 'tap' ? 60 : 50,
+          type: type
+        });
+      }
+
+      if (Math.random() < difficulty.collectibleSpawnRate) {
+        collectibles.push({
+          x: canvas.width,
+          y: canvas.height - 200 - Math.random() * 100,
+          width: 30,
+          height: 30
+        });
+      }
+
+      if (Math.random() < 0.05) {
+        score += 1;
+        updateScore();
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      drawBackground();
+      obstacles.forEach(drawObstacle);
+      collectibles.forEach(drawCollectible);
+      drawPlayer();
+    }
+
+    function gameLoop() {
+      update();
+      render();
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function updateScore() {
+      scoreEl.textContent = score;
+    }
+
+    function updateLives() {
+      livesEl.textContent = '❤️'.repeat(Math.max(0, lives));
+    }
+
+    function updateEnvironmentIndicator() {
+      if (selectedPlace) {
+        const difficulty = difficultySettings[selectedPlace];
+        environmentIndicator.textContent = `${difficulty.icon} ${difficulty.name}`;
+      }
+    }
+
+    function startGame() {
+      if (!selectedPlace) return;
+      
+      titleScreen.style.display = 'none';
+      canvas.style.display = 'block';
+      hud.style.display = 'flex';
+      gameOverScreen.style.display = 'none';
+      
+      gameRunning = true;
+      score = 0;
+      lives = 3;
+      hitCounter = 0;
+      obstacles = [];
+      collectibles = [];
+      backgroundX = 0;
+      
+      player.y = canvas.height - 150;
+      player.velocityY = 0;
+      
+      updateScore();
+      updateLives();
+      updateEnvironmentIndicator();
+      gameLoop();
+    }
+
+    function endGame() {
+      gameRunning = false;
+      cancelAnimationFrame(animationId);
+      
+      canvas.style.display = 'none';
+      hud.style.display = 'none';
+      gameOverScreen.style.display = 'flex';
+      
+      finalScoreEl.textContent = `Final Score: ${score}`;
+      
+      // Check for level unlocks
+      let unlockMessage = '';
+      const currentTotal = Math.max(...allPlayerRecords.map(r => r.total_points), 0);
+      const newTotal = currentTotal + score;
+      
+      if (currentTotal < 500 && newTotal >= 500) {
+        unlockMessage = '🎉 City Level Unlocked!';
+      } else if (currentTotal < 1000 && newTotal >= 1000) {
+        unlockMessage = '🎉 Forest Level Unlocked!';
+      } else if (currentTotal < 2500 && newTotal >= 2500) {
+        unlockMessage = '🎉 Riverbed Level Unlocked! All levels complete!';
+      }
+      
+      levelUnlockMessage.textContent = unlockMessage;
+      
+      // Show name input for saving score
+      nameInputSection.classList.remove('hidden');
+      playerNameInput.value = '';
+    }
+
+    function quitGame() {
+      gameOverScreen.style.display = 'none';
+      titleScreen.style.display = 'flex';
+      selectedPlace = null;
+      document.querySelectorAll('.place-card').forEach(c => c.classList.remove('selected'));
+    }
+
+    // Touch and Click controls for web/mobile
+    function handleJump() {
+      if (!gameRunning) return;
+      
+      if (player.grounded) {
+        player.velocityY = -15;
+        player.jumping = true;
+        player.grounded = false;
+      }
+    }
+
+    // Touch controls for mobile
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleJump();
+    });
+
+    // Click controls for desktop
+    canvas.addEventListener('click', handleJump);
+
+    // Also support keyboard as backup
+    document.addEventListener('keydown', (e) => {
+      if ((e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W')) {
+        handleJump();
+      }
+    });
+
+    // Place selection
+    const placeCards = document.querySelectorAll('.place-card');
+    placeCards.forEach(card => {
+      card.addEventListener('click', () => {
+        if (card.classList.contains('locked')) return;
+        
+        placeCards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedPlace = card.dataset.place;
+        
+        setTimeout(startGame, 300);
+      });
+    });
+
+    // Event listeners
+    restartBtn.addEventListener('click', () => {
+      gameOverScreen.style.display = 'none';
+      titleScreen.style.display = 'flex';
+      selectedPlace = null;
+      placeCards.forEach(c => c.classList.remove('selected'));
+    });
+
+    quitBtn.addEventListener('click', quitGame);
+
+    viewLeaderboardBtn.addEventListener('click', () => {
+      titleScreen.style.display = 'none';
+      leaderboardScreen.style.display = 'flex';
+    });
+
+    backToMenuBtn.addEventListener('click', () => {
+      leaderboardScreen.style.display = 'none';
+      titleScreen.style.display = 'flex';
+    });
+
+    saveScoreBtn.addEventListener('click', saveScore);
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // Initialize
+    resizeCanvas();
+    initDataSDK();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9afe522c95756091',t:'MTc2NjA1NzM1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
